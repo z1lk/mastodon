@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { changeReportComment, submitReport } from '../../../actions/reports';
+import { changeReportComment, changeReportForward, submitReport } from '../../../actions/reports';
 import { refreshAccountTimeline } from '../../../actions/timelines';
 import PropTypes from 'prop-types';
 import ImmutablePropTypes from 'react-immutable-proptypes';
@@ -10,6 +10,7 @@ import StatusCheckBox from '../../report/containers/status_check_box_container';
 import { OrderedSet } from 'immutable';
 import ImmutablePureComponent from 'react-immutable-pure-component';
 import Button from '../../../components/button';
+import Toggle from 'react-toggle';
 
 const messages = defineMessages({
   placeholder: { id: 'report.placeholder', defaultMessage: 'Additional comments' },
@@ -26,6 +27,7 @@ const makeMapStateToProps = () => {
       isSubmitting: state.getIn(['reports', 'new', 'isSubmitting']),
       account: getAccount(state, accountId),
       comment: state.getIn(['reports', 'new', 'comment']),
+      forward: state.getIn(['reports', 'new', 'forward']),
       statusIds: OrderedSet(state.getIn(['timelines', `account:${accountId}`, 'items'])).union(state.getIn(['reports', 'new', 'status_ids'])),
     };
   };
@@ -42,12 +44,17 @@ export default class ReportModal extends ImmutablePureComponent {
     account: ImmutablePropTypes.map,
     statusIds: ImmutablePropTypes.orderedSet.isRequired,
     comment: PropTypes.string.isRequired,
+    forward: PropTypes.bool,
     dispatch: PropTypes.func.isRequired,
     intl: PropTypes.object.isRequired,
   };
 
-  handleCommentChange = (e) => {
+  handleCommentChange = e => {
     this.props.dispatch(changeReportComment(e.target.value));
+  }
+
+  handleForwardChange = e => {
+    this.props.dispatch(changeReportForward(e.target.checked));
   }
 
   handleSubmit = () => {
@@ -65,7 +72,7 @@ export default class ReportModal extends ImmutablePureComponent {
   }
 
   render () {
-    const { account, comment, intl, statusIds, isSubmitting } = this.props;
+    const { account, comment, intl, statusIds, isSubmitting, forward } = this.props;
 
     if (!account) {
       return null;
@@ -93,6 +100,11 @@ export default class ReportModal extends ImmutablePureComponent {
               disabled={isSubmitting}
             />
           </div>
+
+          <label>
+            <Toggle checked={forward} disabled={isSubmitting} onChange={this.handleForwardChange} />
+            <FormattedMessage id='report.forward' defaultMessage='Send a copy of this report to {target}' values={{ target: account.get('acct').split('@')[1] }} />
+          </label>
         </div>
 
         <div className='report-modal__action-bar'>
